@@ -14,7 +14,7 @@ from app.models.task import (
 )
 from app.models.user import Message
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
 @router.get("/", response_model=TasksPublic)
