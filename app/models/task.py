@@ -19,8 +19,8 @@ class StatusEnum(str, Enum):
 class TaskBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime = Field(default=datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     completed_date: datetime | None = None
     status: StatusEnum = Field(default=StatusEnum.PENDING)
 
