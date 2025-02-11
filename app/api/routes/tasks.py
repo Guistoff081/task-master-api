@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -46,7 +47,9 @@ def read_tasks(
         tasks = session.exec(statement).all()
 
     # Convert Task to TaskPublic using model_validate (as from_orm is deprecated)
-    return TasksPublic(data=[TaskPublic.model_validate(task) for task in tasks], count=count)
+    return TasksPublic(
+        data=[TaskPublic.model_validate(task) for task in tasks], count=count
+    )
 
 
 @router.get("/{id}", response_model=TaskPublic)
@@ -70,6 +73,8 @@ def create_task(
     Create new task.
     """
     task = Task.model_validate(task_in, update={"owner_id": current_user.id})
+    if task.status == "completed" and not task.completed_date:
+        task.completed_date = datetime.now(UTC)
     session.add(task)
     session.commit()
     session.refresh(task)
@@ -94,6 +99,11 @@ def update_task(
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = task_in.model_dump(exclude_unset=True)
     task.sqlmodel_update(update_dict)
+    if "status" in update_dict:
+        if update_dict["status"] == "completed" and not task.completed_date:
+            task.completed_date = datetime.now(UTC)
+        elif update_dict["status"] == "pending":
+            task.completed_date = None
     session.add(task)
     session.commit()
     session.refresh(task)

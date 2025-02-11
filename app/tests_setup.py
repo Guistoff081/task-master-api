@@ -20,13 +20,22 @@ wait_seconds = 1
     after=after_log(logger, logging.WARN),
 )
 def init(db_engine: Engine) -> None:
+    """
+    Initializes the test database connection in the same way as the production code.
+    Executes a simple query and commits the transaction to ensure there are no open
+    transactions left.
+    """
     try:
         # Try to create session to check if DB is awake
         with Session(db_engine) as session:
+            # Execute the test health-check query.
             session.exec(select(1))
-    except Exception as e:
-        logger.error(e)
-        raise e
+            # Commit to end the transaction and silence warnings.
+            session.commit()
+            logger.info("Test database connection established successfully.")
+    except Exception as exc:
+        logger.error(f"Test database connection failed: {exc}", exc_info=exc)
+        raise
 
 
 def main() -> None:

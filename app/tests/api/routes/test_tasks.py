@@ -10,7 +10,10 @@ from app.tests.utils.task import create_random_task
 def test_create_task(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    data = {"title": "Wash the dishes", "description": "I have to wash the dishes tonight"}
+    data = {
+        "title": "Wash the dishes",
+        "description": "I have to wash the dishes tonight",
+    }
     response = client.post(
         f"{settings.API_V1_STR}/tasks/",
         headers=superuser_token_headers,
@@ -49,7 +52,7 @@ def test_read_task_not_found(
     )
     assert response.status_code == 404
     content = response.json()
-    assert content["detail"] == "Item not found"
+    assert content["detail"] == "Task not found"
 
 
 def test_read_task_not_enough_permissions(
@@ -108,7 +111,7 @@ def test_update_task_not_found(
     )
     assert response.status_code == 404
     content = response.json()
-    assert content["detail"] == "Item not found"
+    assert content["detail"] == "Task not found"
 
 
 def test_update_task_not_enough_permissions(
@@ -136,7 +139,7 @@ def test_delete_task(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["message"] == "Item deleted successfully"
+    assert content["message"] == "Task deleted successfully"
 
 
 def test_delete_task_not_found(
@@ -148,7 +151,7 @@ def test_delete_task_not_found(
     )
     assert response.status_code == 404
     content = response.json()
-    assert content["detail"] == "Item not found"
+    assert content["detail"] == "Task not found"
 
 
 def test_delete_task_not_enough_permissions(
@@ -162,3 +165,31 @@ def test_delete_task_not_enough_permissions(
     assert response.status_code == 400
     content = response.json()
     assert content["detail"] == "Not enough permissions"
+
+
+def test_update_task_status_completed(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    task = create_random_task(db)
+    data = {"status": "completed"}
+    response = client.put(
+        f"{settings.API_V1_STR}/tasks/{task.id}",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["status"] == "completed"
+    assert content["completed_date"] is not None
+
+    # Test changing back to pending
+    data = {"status": "pending"}
+    response = client.put(
+        f"{settings.API_V1_STR}/tasks/{task.id}",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["status"] == "pending"
+    assert content["completed_date"] is None
